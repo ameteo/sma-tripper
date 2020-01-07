@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Tripper</string>
+    <string name="tab_title_ongoing">Ongoing</string>
+    <string name="tab_title_create">Create</string>
+    <string name="tab_title_recommended">Recommended</string>
+    <string name="tab_title_trips">My Trips</string>
+    <string name="date_value_placeholders">${dayOfMonth}/${month + 1}/${year}</string>
+</resources>
