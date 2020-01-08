@@ -10,6 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -19,6 +23,7 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.tab_create.*
+import org.json.JSONObject
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.time.Duration
@@ -80,6 +85,30 @@ class MainActivity : AppCompatActivity() {
         val adapter: ArrayAdapter<String> = ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, countries)
         val destination = createView?.findViewById<AutoCompleteTextView>(R.id.autocomplete_create_destination)
         destination?.setAdapter(adapter)
+        val queue = Volley.newRequestQueue(this)
+        destination?.addTextChangedListener {
+            val apiKey = getString(R.string.places_api_key)
+            val url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${it}&types=(cities)&key=${apiKey}"
+
+            val request = JsonObjectRequest(Request.Method.GET, url, null,
+                Response.Listener { json ->
+                    if ((json.getString("status") == "OK").not()) {
+                        print(json.getString("error_message"))
+                    } else {
+                        val results: ArrayList<String> = ArrayList()
+                        val predictions = json.getJSONArray("predictions")
+                        for (index in 0 until predictions.length()) {
+                            val prediction = predictions.getJSONObject(index)
+                            results.add(prediction.getString("description"))
+                        }
+                        destination.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, results))
+                    }
+
+                },
+                Response.ErrorListener {  print("no") }
+            )
+            queue.add(request)
+        }
         val datePickerFrom = DatePickerDialog(this@MainActivity)
         val from = createView?.findViewById<EditText>(R.id.input_create_from)
         var fromDate: LocalDate? = null
