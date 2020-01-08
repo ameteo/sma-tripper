@@ -11,7 +11,8 @@ import kotlinx.android.synthetic.main.event.view.*
 import java.net.URL
 
 class EventRecyclerViewAdapter(
-    private val events: MutableList<Event>
+    private val events: MutableList<Event>,
+    private val onClick: (Event) -> (Unit)
 ) : RecyclerView.Adapter<EventRecyclerViewAdapter.EventViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventViewHolder{
@@ -30,11 +31,14 @@ class EventRecyclerViewAdapter(
 
     inner class EventViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         fun bind(event: Event) {
-            view.event_title.text = event.name
+            view.event_description.text = event.name
             if (event.thumbnailUrl != null)
                 RetrieveBitmapTask {
                     view.event_thumbnail.setImageBitmap(it)
                 }.execute(event.thumbnailUrl)
+            view.event_add.setOnClickListener {
+                onClick(events[adapterPosition])
+            }
         }
     }
 }

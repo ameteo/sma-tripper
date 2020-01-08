@@ -8,13 +8,15 @@
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar2"
-        android:layout_width="0dp"
+        android:layout_width="411dp"
         android:layout_height="200dp"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
         app:contentInsetStart="0dp"
         app:contentInsetStartWithNavigation="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/lbl_select_poi"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:titleMargin="4dp">
@@ -36,7 +38,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="%d day trip to %s created!"
                     android:visibility="invisible"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -49,6 +50,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
                     android:text="Create"
+                    android:textAlignment="center"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent" />
 
@@ -138,24 +140,38 @@
         android:id="@+id/lbl_select_poi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="4dp"
-        android:text="Select one or more Points of Interest to add to the trip"
+        android:text="Add events to your trip? You can also do this later."
+        android:textAlignment="center"
+        android:textSize="16dp"
         android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/rv_events"
+        app:layout_constraintBottom_toTopOf="@+id/btn_create_done"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar2" />
 
+    <Button
+        android:id="@+id/btn_create_done"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Done"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/rv_events"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lbl_select_poi" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_events"
-        android:layout_width="409dp"
-        android:layout_height="509dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar2">
+        app:layout_constraintTop_toBottomOf="@+id/btn_create_done">
 
     </androidx.recyclerview.widget.RecyclerView>
 

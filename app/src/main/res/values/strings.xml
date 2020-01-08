@@ -5,4 +5,5 @@
     <string name="tab_title_recommended">Recommended</string>
     <string name="tab_title_trips">My Trips</string>
     <string name="temp_thumbnail_url">https://cdn.getyourguide.com/img/tour_img-1448924-146.jpg</string>
+    <string name="lbl_trip_created"> Want to add some events? You can also do this later.</string>
 </resources>

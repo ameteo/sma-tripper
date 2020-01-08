@@ -26,42 +26,38 @@
                 android:id="@+id/event_thumbnail"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:layout_marginStart="32dp"
+                android:layout_marginStart="10dp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/event_title"
-                app:layout_constraintHorizontal_chainStyle="spread_inside"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
             <TextView
-                android:id="@+id/event_title"
+                android:id="@+id/event_description"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="10dp"
-                android:layout_marginBottom="10dp"
                 android:layout_weight="1"
+                android:maxWidth="150dp"
+                android:maxHeight="70dp"
+                android:singleLine="false"
                 android:text="EventTitle"
                 android:textAlignment="center"
+                android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/event_add"
-                app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toEndOf="@+id/event_thumbnail"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.506" />
 
             <Button
                 android:id="@+id/event_add"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
+                android:layout_marginEnd="10dp"
                 android:layout_weight="1"
-                android:text="Info"
+                android:text="Add"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toEndOf="@+id/event_title"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

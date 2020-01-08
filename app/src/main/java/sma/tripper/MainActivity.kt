@@ -1,6 +1,6 @@
 package sma.tripper
 
-import android.annotation.TargetApi
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
@@ -24,14 +24,13 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.tab_create.*
-import org.json.JSONObject
-import java.net.URL
-import java.text.SimpleDateFormat
-import java.time.Duration
 import java.time.LocalDate
 import java.time.Period
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity() {
     private var queue: RequestQueue? = null
@@ -44,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private var recommendedView: View? = null
     private var tripsView: View? = null
 
+    private var autocompleteResults: HashMap<String, String> = HashMap()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
 
 
         destination?.addTextChangedListener {
-            if (it!!.length >= 2) {
+            if (it!!.length >= 3) {
                 val apiKey = getString(R.string.places_api_key)
                 val url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${it}&types=(cities)&key=${apiKey}"
 
@@ -99,22 +99,27 @@ class MainActivity : AppCompatActivity() {
                         if ((json.getString("status") == "OK").not()) {
                             Toast.makeText(applicationContext, json.getString("error_message"), Toast.LENGTH_SHORT).show()
                         } else {
-                            val results: ArrayList<String> = ArrayList()
+                            autocompleteResults.clear()
+//                            val results: ArrayList<String> = ArrayList()
                             val predictions = json.getJSONArray("predictions")
                             for (index in 0 until predictions.length()) {
                                 val prediction = predictions.getJSONObject(index)
-                                results.add(prediction.getString("description"))
+//                                results.add(prediction.getString("description"))
+                                val description = prediction.getString("description")
+                                val placeId = prediction.getString("place_id")
+                                autocompleteResults[description] = placeId
                             }
-                            destination.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, results))
+                            destination.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, autocompleteResults.keys.toList()))
                         }
 
                     },
-                    Response.ErrorListener {  print("no") }
+                    Response.ErrorListener { print("no") }
                 )
                 queue?.add(request)
             }
         }
         val datePickerFrom = DatePickerDialog(this@MainActivity)
+        val datePickerTo = DatePickerDialog(this@MainActivity)
         val from = createView?.findViewById<EditText>(R.id.input_create_from)
         var fromDate: LocalDate? = null
         val to = createView?.findViewById<EditText>(R.id.input_create_to)
@@ -124,16 +129,16 @@ class MainActivity : AppCompatActivity() {
         datePickerFrom.setOnDateSetListener { view, year, month, dayOfMonth ->
             fromDate = LocalDate.of(year, month + 1, dayOfMonth)
             input_create_from.setText(fromDate?.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
+            datePickerTo.datePicker.minDate = localDateToDate(fromDate?.plusDays(1)!!).time
         }
-        val datePickerTo = DatePickerDialog(this@MainActivity)
         to?.setOnFocusChangeListener { v, hasFocus -> if (hasFocus) datePickerTo.show() }
         var toDate: LocalDate? = null
         datePickerTo.setOnDateSetListener { view, year, month, dayOfMonth ->
             toDate = LocalDate.of(year, month + 1, dayOfMonth)
             input_create_to.setText(toDate?.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
+            datePickerFrom.datePicker.maxDate = localDateToDate(toDate?.minusDays(1)!!).time
         }
         val createButton = createView?.findViewById<Button>(R.id.btn_create_next)
-        val createdLabel = createView?.findViewById<TextView>(R.id.lbl_created)
         createButton?.setOnClickListener {
             val invalidFields: ArrayList<String> = ArrayList()
             if (from?.text.isNullOrEmpty()) {
@@ -149,16 +154,16 @@ class MainActivity : AppCompatActivity() {
                 createButton.visibility = Button.INVISIBLE
                 lbl_select_poi.visibility = View.VISIBLE
                 lbl_created.visibility = View.VISIBLE
+                btn_create_done.visibility = Button.VISIBLE
 
-                if (fromDate != null && toDate != null)
-                    lbl_created.text = "${Period.between(fromDate, toDate).days} day trip to ${destination?.text} created!"
-                else
-                    lbl_created.text = "Trip to ${destination?.text} created!"
+                trip = Trip(fromDate!!, toDate!!, destination?.text.toString())
+                lbl_created.text = "${trip!!.tripDays.size} day trip to ${destination?.text} created!"
 
                 from?.isEnabled = false
                 to?.isEnabled = false
                 destination?.isEnabled = false
-                initList()
+                trip = Trip(fromDate!!, toDate!!, destination?.text.toString())
+                getDestinationLocationAndInitList()
             } else
                 Toast.makeText(applicationContext, "Invalid value for ${invalidFields.joinToString()}", Toast.LENGTH_SHORT).show()
         }
@@ -167,36 +172,87 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewAdapter: EventRecyclerViewAdapter
     private lateinit var viewManager: RecyclerView.LayoutManager
 
-    private fun initList() {
+    private fun localDateToDate(localDate: LocalDate) : Date {
+        return Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
+    }
+
+    private fun getDestinationLocationAndInitList() {
         val destination = autocomplete_create_destination.text.toString()
+        val destinationPlaceId = autocompleteResults[destination]
         val apiKey = getString(R.string.places_api_key)
 
-        val url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=1500&type=restaurant&keyword=cruise&key=YOUR_API_KEY"
-
-        val request = JsonObjectRequest(Request.Method.GET, url, null,
+        val placeDetailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=${destinationPlaceId}&fields=geometry&key=${apiKey}"
+        val placeLocationRequest = JsonObjectRequest(Request.Method.GET, placeDetailsUrl, null,
             Response.Listener { json ->
                 if ((json.getString("status") == "OK").not()) {
                     Toast.makeText(applicationContext, json.getString("error_message"), Toast.LENGTH_SHORT).show()
+                } else {
+                    val location = json.getJSONObject("result").getJSONObject("geometry").getJSONObject("location")
+                    val lat = location.getString("lat")
+                    val lng = location.getString("lng")
+                    initList(lat, lng)
+                }
+            },
+            Response.ErrorListener { print("no") }
+        )
+        queue?.add(placeLocationRequest)
+    }
+
+    private fun initList(lat: String, lng: String) {
+        val apiKey = getString(R.string.places_api_key)
+        val nearbySearchUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=10000&type=tourist_attraction&key=${apiKey}"
+        val nearbySearchRequest = JsonObjectRequest(Request.Method.GET, nearbySearchUrl, null,
+            Response.Listener { json ->
+                if ((json.getString("status") == "OK").not()) {
+                    val message = if (json.has("error_message")) json.getString("error_message") else "Please try a different location"
+                    Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
                 } else {
                     val events: ArrayList<Event> = ArrayList()
                     val results = json.getJSONArray("results")
                     for (index in 0 until results.length()) {
                         val result = results.getJSONObject(index)
-//                        val location = result.getJSONObject("geometry").getJSONObject("location")
-//                        val latitude = location.getString("lat")
-//                        val longitude = location.getString("lng")
 
                         val name = result.getString("name")
-                        val photos = result.getJSONArray("photos")
+                        val address = result.getString("vicinity")
                         var photoUrl: String? = null
-                        if (photos.length() > 0) {
-                            val photo = photos.getJSONObject(0)
-                            val photoReference = photo.getString("photo_reference")
-                            photoUrl = "https://maps.googleapis.com/maps/api/place/photo?photoreference=${photoReference}&maxwidth=400&key=${apiKey}"
+                        if (result.has("photos")) {
+                            val photos = result.getJSONArray("photos")
+                            if (photos.length() > 0) {
+                                val photo = photos.getJSONObject(0)
+                                val photoReference = photo.getString("photo_reference")
+                                photoUrl = "https://maps.googleapis.com/maps/api/place/photo?photoreference=${photoReference}&maxwidth=400&key=${apiKey}"
+                            }
                         }
-                        events.add(Event(name, photoUrl))
+                        events.add(Event(name, address, photoUrl))
                     }
-                    viewAdapter = EventRecyclerViewAdapter(events.toMutableList())
+                    viewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event ->
+
+                        val dialogView = View.inflate(this@MainActivity, R.layout.date_time_picker, null)
+                        val alertDialog = AlertDialog.Builder(this@MainActivity).create()
+
+                        val spinner = dialogView.findViewById<Spinner>(R.id.spinner_date_time_picker)
+
+                        ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_item, trip!!.tripDays.keys.sorted().toList()).also {
+                            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                            spinner.adapter = it
+                            spinner.setSelection(0)
+                        }
+
+                        val timePicker = dialogView.findViewById<TimePicker>(R.id.time_picker_date_time_picker)
+                        dialogView.findViewById<Button>(R.id.btn_date_time_picker_add).setOnClickListener {
+                            event.date = trip!!.tripDays[spinner.selectedItem]
+                            event.hour = timePicker.hour
+                            event.minute = timePicker.minute
+                            trip?.addEvent(event)
+                            alertDialog.dismiss()
+                        }
+                        dialogView.findViewById<Button>(R.id.btn_date_time_picker_cancel).setOnClickListener {
+                            alertDialog.dismiss()
+                        }
+                        alertDialog.setView(dialogView)
+                        alertDialog.show()
+
+                    }
                     viewManager = LinearLayoutManager(this)
                     recyclerView = rv_events.apply {
                         adapter = viewAdapter
@@ -205,10 +261,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
             },
-            Response.ErrorListener {  print("no") }
+            Response.ErrorListener { print("no") }
         )
-        queue?.add(request)
+        queue?.add(nearbySearchRequest)
     }
+
+    var trip: Trip? = null
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

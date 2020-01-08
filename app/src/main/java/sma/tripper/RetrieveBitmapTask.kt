@@ -3,6 +3,7 @@ package sma.tripper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
+import java.lang.Integer.min
 import java.net.URL
 
 class RetrieveBitmapTask(val bitmapConsumer: (Bitmap) -> Unit): AsyncTask<String, Void, Bitmap>() {
@@ -12,6 +13,9 @@ class RetrieveBitmapTask(val bitmapConsumer: (Bitmap) -> Unit): AsyncTask<String
     }
 
     override fun onPostExecute(bitmap: Bitmap?) {
-        bitmapConsumer(bitmap!!)
+        val originalBitmap = bitmap!!
+        val length = min(originalBitmap.width, originalBitmap.height)
+        val croppedBitmap = Bitmap.createBitmap(originalBitmap, (originalBitmap.width - length) / 2, (originalBitmap.height - length) / 2, length, length)
+        bitmapConsumer(croppedBitmap)
     }
 }
