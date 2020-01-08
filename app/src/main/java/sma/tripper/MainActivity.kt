@@ -320,6 +320,7 @@ class MainActivity : AppCompatActivity() {
     private fun logout() {
         googleSignInClient?.signOut()?.addOnCompleteListener(this) {
             account = null
+            avatar.setImageResource(R.drawable.avatar)
             updateUI()
         }
     }
@@ -334,11 +335,14 @@ class MainActivity : AppCompatActivity() {
             btn_logout.visibility = Button.VISIBLE
             lbl_user.text = account?.displayName
 
-            val accountPhotoUrl = account?.photoUrl?.path
-            if (accountPhotoUrl != null)
+            var accountPhotoUrl = account?.photoUrl?.path
+            if (accountPhotoUrl != null) {
+                if (accountPhotoUrl.startsWith("http").not())
+                    accountPhotoUrl = "https://lh3.googleusercontent.com/${accountPhotoUrl}"
                 RetrieveBitmapTask {
                     avatar.setImageBitmap(it)
                 }.execute(accountPhotoUrl)
+            }
             else
                 avatar.setImageResource(R.drawable.avatar)
         }
