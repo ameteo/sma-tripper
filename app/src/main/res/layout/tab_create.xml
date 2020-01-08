@@ -80,8 +80,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:ems="10"
-                            android:inputType="date"
-                            android:text="08 January 2020" />
+                            android:inputType="date" />
                     </TableRow>
 
                     <TableRow
@@ -102,8 +101,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:ems="10"
-                            android:inputType="date"
-                            android:text="10 January 2020" />
+                            android:inputType="date" />
                     </TableRow>
 
                     <TableRow
@@ -124,7 +122,7 @@
                             android:id="@+id/autocomplete_create_destination"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Belgium" />
+                            android:popupBackground="@color/color5" />
                     </TableRow>
 
                 </TableLayout>

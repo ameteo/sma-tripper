@@ -11,6 +11,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
+import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
@@ -33,17 +34,22 @@ import java.time.format.DateTimeFormatter
 import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
-    var googleSignInClient: GoogleSignInClient? = null
-    var account: GoogleSignInAccount? = null
+    private var queue: RequestQueue? = null
 
-    var ongoingView: View? = null
-    var createView: View? = null
-    var recommendedView: View? = null
-    var tripsView: View? = null
+    private var googleSignInClient: GoogleSignInClient? = null
+    private var account: GoogleSignInAccount? = null
+
+    private var ongoingView: View? = null
+    private var createView: View? = null
+    private var recommendedView: View? = null
+    private var tripsView: View? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        queue = Volley.newRequestQueue(this)
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .build()
@@ -79,41 +85,41 @@ class MainActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) { }
         })
 
-        val countries = arrayOf(
-            "Belgium", "France", "Italy", "Germany", "Spain"
-        )
-        val adapter: ArrayAdapter<String> = ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, countries)
+
         val destination = createView?.findViewById<AutoCompleteTextView>(R.id.autocomplete_create_destination)
-        destination?.setAdapter(adapter)
-        val queue = Volley.newRequestQueue(this)
+
+
         destination?.addTextChangedListener {
-            val apiKey = getString(R.string.places_api_key)
-            val url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${it}&types=(cities)&key=${apiKey}"
+            if (it!!.length >= 2) {
+                val apiKey = getString(R.string.places_api_key)
+                val url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${it}&types=(cities)&key=${apiKey}"
 
-            val request = JsonObjectRequest(Request.Method.GET, url, null,
-                Response.Listener { json ->
-                    if ((json.getString("status") == "OK").not()) {
-                        print(json.getString("error_message"))
-                    } else {
-                        val results: ArrayList<String> = ArrayList()
-                        val predictions = json.getJSONArray("predictions")
-                        for (index in 0 until predictions.length()) {
-                            val prediction = predictions.getJSONObject(index)
-                            results.add(prediction.getString("description"))
+                val request = JsonObjectRequest(Request.Method.GET, url, null,
+                    Response.Listener { json ->
+                        if ((json.getString("status") == "OK").not()) {
+                            Toast.makeText(applicationContext, json.getString("error_message"), Toast.LENGTH_SHORT).show()
+                        } else {
+                            val results: ArrayList<String> = ArrayList()
+                            val predictions = json.getJSONArray("predictions")
+                            for (index in 0 until predictions.length()) {
+                                val prediction = predictions.getJSONObject(index)
+                                results.add(prediction.getString("description"))
+                            }
+                            destination.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, results))
                         }
-                        destination.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, results))
-                    }
 
-                },
-                Response.ErrorListener {  print("no") }
-            )
-            queue.add(request)
+                    },
+                    Response.ErrorListener {  print("no") }
+                )
+                queue?.add(request)
+            }
         }
         val datePickerFrom = DatePickerDialog(this@MainActivity)
         val from = createView?.findViewById<EditText>(R.id.input_create_from)
         var fromDate: LocalDate? = null
         val to = createView?.findViewById<EditText>(R.id.input_create_to)
-
+        from?.keyListener = null
+        to?.keyListener = null
         from?.setOnFocusChangeListener { v, hasFocus -> if (hasFocus) datePickerFrom.show() }
         datePickerFrom.setOnDateSetListener { view, year, month, dayOfMonth ->
             fromDate = LocalDate.of(year, month + 1, dayOfMonth)
@@ -160,14 +166,48 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: EventRecyclerViewAdapter
     private lateinit var viewManager: RecyclerView.LayoutManager
+
     private fun initList() {
-        val events = (1..10).map { "Point Of Interest #${it}" }.map { Event(it, getString(R.string.temp_thumbnail_url)) }.toList()
-        viewAdapter = EventRecyclerViewAdapter(events.toMutableList())
-        viewManager = LinearLayoutManager(this)
-        recyclerView = rv_events.apply {
-            adapter = viewAdapter
-            layoutManager = viewManager
-        }
+        val destination = autocomplete_create_destination.text.toString()
+        val apiKey = getString(R.string.places_api_key)
+
+        val url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=1500&type=restaurant&keyword=cruise&key=YOUR_API_KEY"
+
+        val request = JsonObjectRequest(Request.Method.GET, url, null,
+            Response.Listener { json ->
+                if ((json.getString("status") == "OK").not()) {
+                    Toast.makeText(applicationContext, json.getString("error_message"), Toast.LENGTH_SHORT).show()
+                } else {
+                    val events: ArrayList<Event> = ArrayList()
+                    val results = json.getJSONArray("results")
+                    for (index in 0 until results.length()) {
+                        val result = results.getJSONObject(index)
+//                        val location = result.getJSONObject("geometry").getJSONObject("location")
+//                        val latitude = location.getString("lat")
+//                        val longitude = location.getString("lng")
+
+                        val name = result.getString("name")
+                        val photos = result.getJSONArray("photos")
+                        var photoUrl: String? = null
+                        if (photos.length() > 0) {
+                            val photo = photos.getJSONObject(0)
+                            val photoReference = photo.getString("photo_reference")
+                            photoUrl = "https://maps.googleapis.com/maps/api/place/photo?photoreference=${photoReference}&maxwidth=400&key=${apiKey}"
+                        }
+                        events.add(Event(name, photoUrl))
+                    }
+                    viewAdapter = EventRecyclerViewAdapter(events.toMutableList())
+                    viewManager = LinearLayoutManager(this)
+                    recyclerView = rv_events.apply {
+                        adapter = viewAdapter
+                        layoutManager = viewManager
+                    }
+                }
+
+            },
+            Response.ErrorListener {  print("no") }
+        )
+        queue?.add(request)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
