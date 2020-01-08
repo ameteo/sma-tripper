@@ -9,8 +9,7 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar2"
         android:layout_width="0dp"
-        android:layout_height="220dp"
-        android:background="?attr/colorPrimary"
+        android:layout_height="200dp"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
         app:contentInsetStart="0dp"
@@ -24,7 +23,7 @@
             android:id="@+id/create_cards"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:cardBackgroundColor="@color/colorPrimary"
+            app:cardBackgroundColor="@color/color2"
             tools:layout_editor_absoluteX="1dp"
             tools:layout_editor_absoluteY="316dp">
 
@@ -36,8 +35,9 @@
                     android:id="@+id/lbl_created"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="25dp"
-                    android:text=""
+                    android:layout_marginBottom="8dp"
+                    android:text="%d day trip to %s created!"
+                    android:visibility="invisible"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintHorizontal_bias="0.5"
@@ -47,8 +47,7 @@
                     android:id="@+id/btn_create_next"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="15dp"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginEnd="16dp"
                     android:text="Create"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent" />
@@ -57,7 +56,7 @@
                     android:id="@+id/tbl_create_fields"
                     android:layout_width="wrap_content"
                     android:layout_height="0dp"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="16dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -80,9 +79,9 @@
                             android:id="@+id/input_create_from"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="01/01/2020"
                             android:ems="10"
-                            android:inputType="date" />
+                            android:inputType="date"
+                            android:text="08 January 2020" />
                     </TableRow>
 
                     <TableRow
@@ -101,10 +100,10 @@
                         <EditText
                             android:id="@+id/input_create_to"
                             android:layout_width="wrap_content"
-                            android:text="02/01/2020"
                             android:layout_height="wrap_content"
                             android:ems="10"
-                            android:inputType="date" />
+                            android:inputType="date"
+                            android:text="10 January 2020" />
                     </TableRow>
 
                     <TableRow
@@ -123,9 +122,9 @@
 
                         <AutoCompleteTextView
                             android:id="@+id/autocomplete_create_destination"
-                            android:text="Belgium"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:text="Belgium" />
                     </TableRow>
 
                 </TableLayout>
@@ -137,6 +136,20 @@
 
     </androidx.appcompat.widget.Toolbar>
 
+    <TextView
+        android:id="@+id/lbl_select_poi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="4dp"
+        android:text="Select one or more Points of Interest to add to the trip"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/rv_events"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar2" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_events"
         android:layout_width="409dp"
@@ -144,6 +157,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar2" />
+        app:layout_constraintTop_toBottomOf="@+id/toolbar2">
+
+    </androidx.recyclerview.widget.RecyclerView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,5 +4,5 @@
     <string name="tab_title_create">Create</string>
     <string name="tab_title_recommended">Recommended</string>
     <string name="tab_title_trips">My Trips</string>
-    <string name="date_value_placeholders">${dayOfMonth}/${month + 1}/${year}</string>
+    <string name="temp_thumbnail_url">https://cdn.getyourguide.com/img/tour_img-1448924-146.jpg</string>
 </resources>

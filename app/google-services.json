@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "836017000170",
+    "firebase_url": "https://sma-tripper-1578427609801.firebaseio.com",
+    "project_id": "sma-tripper-1578427609801",
+    "storage_bucket": "sma-tripper-1578427609801.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:836017000170:android:879eebb5a64abea5dc9193",
+        "android_client_info": {
+          "package_name": "sma.tripper"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "836017000170-qb720n1qlnpinfp6ekhjlclqr8kj2ts9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sma.tripper",
+            "certificate_hash": "1f856b6728c226dd387143187d506adbea048987"
+          }
+        },
+        {
+          "client_id": "836017000170-5qa62113l2bnku6piul2f6033mf76dd7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqxZHEQ5qu_Um4rsVqEfYRz55ufiL7TjY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "836017000170-5qa62113l2bnku6piul2f6033mf76dd7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

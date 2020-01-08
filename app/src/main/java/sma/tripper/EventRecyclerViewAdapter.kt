@@ -31,22 +31,10 @@ class EventRecyclerViewAdapter(
     inner class EventViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         fun bind(event: Event) {
             view.event_title.text = event.name
-            RetrieveImageTask().execute("https://blindfacts.com/wp-content/uploads/2018/01/The-Color-Green.png")
-        }
-
-        fun setImage(bitmap: Bitmap) {
-            view.event_thumbnail.setImageBitmap(bitmap)
-        }
-
-        inner class RetrieveImageTask : AsyncTask<String, Void, Bitmap>() {
-            override fun doInBackground(vararg sources: String?): Bitmap {
-                val source = URL(sources[0])
-                return BitmapFactory.decodeStream(source.openConnection().getInputStream())
-            }
-
-            override fun onPostExecute(bitmap: Bitmap?) {
-                setImage(bitmap!!)
-            }
+            if (event.thumbnailUrl != null)
+                RetrieveBitmapTask {
+                    view.event_thumbnail.setImageBitmap(it)
+                }.execute(event.thumbnailUrl)
         }
     }
 }

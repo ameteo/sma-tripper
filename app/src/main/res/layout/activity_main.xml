@@ -9,12 +9,14 @@
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@color/color2">
 
         <androidx.appcompat.widget.Toolbar
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|enterAlways">
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:titleMargin="4dp">
 
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -23,21 +25,35 @@
                 tools:context=".MainActivity">
 
 
+                <ImageView
+                    android:id="@+id/avatar"
+                    android:layout_width="45dp"
+                    android:layout_height="30dp"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintEnd_toStartOf="@+id/lbl_user"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/avatar" />
+
                 <TextView
                     android:id="@+id/lbl_user"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginEnd="124dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="112dp"
+                    android:background="@color/color1"
+                    android:gravity="center"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
                     android:text=""
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="@tools:sample/full_names" />
 
                 <Button
                     android:id="@+id/btn_login"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="88dp"
+                    android:layout_height="45dp"
+                    android:layout_marginEnd="8dp"
                     android:text="Login"
                     android:visibility="visible"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -45,9 +61,9 @@
 
                 <Button
                     android:id="@+id/btn_logout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="88dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="8dp"
                     android:text="Logout"
                     android:visibility="invisible"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -61,6 +77,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
+            app:tabIndicatorColor="@color/color3"
+            app:tabIndicatorHeight="5dp"
             app:tabMode="scrollable">
 
             <com.google.android.material.tabs.TabItem

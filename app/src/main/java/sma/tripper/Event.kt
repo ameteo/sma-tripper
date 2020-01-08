@@ -1,3 +1,3 @@
 package sma.tripper
 
-data class Event(val name : String)
+data class Event @JvmOverloads constructor(val name: String, val thumbnailUrl: String? = null)
