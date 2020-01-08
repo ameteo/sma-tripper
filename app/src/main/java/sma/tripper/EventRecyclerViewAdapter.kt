@@ -11,7 +11,7 @@ import kotlinx.android.synthetic.main.event.view.*
 import java.net.URL
 
 class EventRecyclerViewAdapter(
-    private val events: MutableList<Event>,
+    val events: MutableList<Event>,
     private val onClick: (Event) -> (Unit)
 ) : RecyclerView.Adapter<EventRecyclerViewAdapter.EventViewHolder>() {
 
@@ -28,7 +28,6 @@ class EventRecyclerViewAdapter(
         holder.bind(events[position])
     }
 
-
     inner class EventViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         fun bind(event: Event) {
             view.event_description.text = event.name
@@ -38,6 +37,8 @@ class EventRecyclerViewAdapter(
                 }.execute(event.thumbnailUrl)
             view.event_add.setOnClickListener {
                 onClick(events[adapterPosition])
+//                    events.remove(event)
+//                    notifyDataSetChanged()
             }
         }
     }
