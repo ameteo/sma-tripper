@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/color2"
     android:orientation="vertical">
 
     <androidx.appcompat.widget.Toolbar
@@ -37,7 +38,9 @@
                     android:id="@+id/lbl_created"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginBottom="16dp"
                     android:visibility="invisible"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -48,7 +51,7 @@
                     android:id="@+id/btn_create_next"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="16dp"
+                    android:layout_marginEnd="32dp"
                     android:text="Create"
                     android:textAlignment="center"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -124,7 +127,7 @@
                             android:id="@+id/autocomplete_create_destination"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:popupBackground="@color/color5" />
+                            android:popupBackground="@color/color2" />
                     </TableRow>
 
                 </TableLayout>
@@ -140,6 +143,10 @@
         android:id="@+id/lbl_select_poi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="16dp"
         android:text="Add events to your trip? You can also do this later."
         android:textAlignment="center"
         android:textSize="16dp"
@@ -166,6 +173,7 @@
         android:id="@+id/rv_events"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@color/color2"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

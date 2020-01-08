@@ -16,7 +16,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:titleMargin="4dp">
+            app:subtitleTextColor="@android:color/white"
+            app:titleMargin="4dp"
+            app:titleTextColor="@android:color/white">
 
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -44,6 +46,7 @@
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="5dp"
                     android:text=""
+                    android:textColor="@android:color/white"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     tools:text="@tools:sample/full_names" />
@@ -78,7 +81,8 @@
 
             app:tabIndicatorColor="@color/colorAccent"
             app:tabIndicatorHeight="5dp"
-            app:tabMode="scrollable">
+            app:tabMode="scrollable"
+            app:tabTextColor="@android:color/white">
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
@@ -108,6 +112,7 @@
         android:layout_width="match_parent"
 
         android:layout_height="match_parent"
+        android:background="@color/color2"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
     </androidx.core.widget.NestedScrollView>
