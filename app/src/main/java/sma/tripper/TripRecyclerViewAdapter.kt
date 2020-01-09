@@ -14,7 +14,6 @@ import java.time.temporal.ChronoUnit
 
 class TripRecyclerViewAdapter(
     val trips: MutableList<Trip>,
-    private val onDetails: (Trip) -> (Unit),
     private val onRemove: (Trip) -> (Unit)
 ) : RecyclerView.Adapter<TripRecyclerViewAdapter.TripViewHolder>() {
 
@@ -42,7 +41,6 @@ class TripRecyclerViewAdapter(
                 view.trip_until.text = "Ended ${ChronoUnit.DAYS.between(trip.to, today)} days ago..."
             else
                 view.trip_until.text = "Ongoing..."
-            view.trip_details.setOnClickListener { onDetails(trips[adapterPosition]) }
             view.trip_remove.setOnClickListener { onRemove(trips[adapterPosition]) }
         }
 

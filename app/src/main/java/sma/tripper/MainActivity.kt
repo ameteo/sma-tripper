@@ -2,8 +2,14 @@ package sma.tripper
 
 import android.app.DatePickerDialog
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Bundle
 import android.view.View
+import android.view.View.INVISIBLE
+import kotlinx.android.synthetic.main.tab_ongoing.*
+
+import android.view.View.VISIBLE
+import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
@@ -38,9 +44,15 @@ import kotlin.collections.HashMap
 import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.tab_recommended.*
 import kotlinx.android.synthetic.main.tab_trips.*
+import kotlinx.android.synthetic.main.trip.view.*
+import kotlinx.android.synthetic.main.trip_details.*
+import kotlinx.android.synthetic.main.trip_details.view.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import sma.tripper.firebase.FirebaseTripRepository
+import java.time.temporal.ChronoUnit
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
     private lateinit var apiKey: String
@@ -58,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private var createView: View? = null
     private var recommendedView: View? = null
     private var tripsView: View? = null
+    private var tripView: View? = null
     private var tripRepository: TripRepository? = null
     private val tripsLiveData = MutableLiveData<List<Trip>>()
 
@@ -73,10 +86,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tripsViewAdapter: TripRecyclerViewAdapter
     private lateinit var tripsViewManager: RecyclerView.LayoutManager
 
-    private var autocompleteResults: HashMap<String, String> = HashMap()
+    private lateinit var tripDaysRecyclerView: RecyclerView
+    private lateinit var tripDaysViewAdapter: EventRecyclerViewAdapter
+    private lateinit var tripDaysViewManager: RecyclerView.LayoutManager
 
-    fun updateOngoing(trips: List<Trip>) {
-    }
+    private var autocompleteResults: HashMap<String, String> = HashMap()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,14 +110,19 @@ class MainActivity : AppCompatActivity() {
         createView = layoutInflater.inflate(R.layout.tab_create, null)
         recommendedView = layoutInflater.inflate(R.layout.tab_recommended, null)
         tripsView = layoutInflater.inflate(R.layout.tab_trips, null)
+        tripView = layoutInflater.inflate(R.layout.trip_details, null)
+
         nestedScrollView.addView(ongoingView)
+        nestedView.addView(tripView)
         btn_login.setOnClickListener { login() }
         btn_logout.setOnClickListener { logout() }
+
+
+        OngoingUpdater().execute(tripRepository, this::updateOngoing)
 
         tripsLiveData.observe(this, Observer { trips ->
             tripsViewAdapter = TripRecyclerViewAdapter(
                 trips.toMutableList(),
-                { trip -> TripDetailsPopup(this@MainActivity, trip).show() },
                 { trip ->
                     GlobalScope.launch {
                         tripRepository?.removeTrip(trip)
@@ -112,7 +131,7 @@ class MainActivity : AppCompatActivity() {
                 }
             )
             tripsViewManager = LinearLayoutManager(this@MainActivity)
-            rv_trips.apply {
+            tripsView?.findViewById<RecyclerView>(R.id.rv_trips)?.apply {
                 adapter = tripsViewAdapter
                 layoutManager = tripsViewManager
             }
@@ -122,7 +141,7 @@ class MainActivity : AppCompatActivity() {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val newView = when(tab?.text) {
                     getString(R.string.tab_title_ongoing) -> {
-                        GlobalScope.launch { updateOngoing(tripRepository!!.getAllTrips()) }
+                        OngoingUpdater().execute(tripRepository, this@MainActivity::updateOngoing)
                         ongoingView
                     }
                     getString(R.string.tab_title_create) -> createView
@@ -192,11 +211,12 @@ class MainActivity : AppCompatActivity() {
             }
             if (invalidFields.isEmpty()) {
                 createButton.visibility = Button.INVISIBLE
-                lbl_select_poi.visibility = View.VISIBLE
-                lbl_created.visibility = View.VISIBLE
+                lbl_select_poi.visibility = VISIBLE
+                lbl_created.visibility = VISIBLE
                 btn_create_done.visibility = Button.VISIBLE
+
                 val trip = Trip(
-                    System.currentTimeMillis(),
+                    Random.nextLong(),
                     fromDate!!,
                     toDate!!,
                     destination?.text.toString()
@@ -335,7 +355,7 @@ class MainActivity : AppCompatActivity() {
                         photoUrl = urlPlacesPhoto.format(photoReference, apiKey)
                     }
                 }
-                events.add(Event(System.currentTimeMillis(), name, address, photoUrl))
+                events.add(Event(Random.nextLong(), name, address, photoUrl))
             }
             addEventsToRecycleView(events, trip, isRecommended)
         }
@@ -350,10 +370,10 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             createViewManager = LinearLayoutManager(this@MainActivity)
-            createRecyclerView = rv_events.apply {
+            createRecyclerView =  createView?.findViewById<RecyclerView>(R.id.rv_events)?.apply {
                 adapter = createViewAdapter
                 layoutManager = createViewManager
-            }
+            }!!
         } else {
             recommendedCreateViewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event ->
                 onEventAddButtonClicked(
@@ -362,10 +382,10 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             recommendedCreateViewManager = LinearLayoutManager(this@MainActivity)
-            recommendedCreateRecyclerView = rv_recommended_events.apply {
+            recommendedCreateRecyclerView = recommendedView?.findViewById<RecyclerView>(R.id.rv_recommended_events)?.apply {
                 adapter = recommendedCreateViewAdapter
                 layoutManager = recommendedCreateViewManager
-            }
+            }!!
         }
     }
 
@@ -434,5 +454,62 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val REQUEST_CODE_SIGN_IN = 0xff
+    }
+
+    fun updateOngoing(trips: List<Trip>) {
+        val today = LocalDate.now()
+        val ongoingTrip = trips.filter {
+            it.from.minusDays(1).isBefore(today) && it.to.plusDays(1).isAfter(today)
+        }.firstOrNull()
+        if (ongoingTrip == null) {
+            ongoingView?.findViewById<TextView>(R.id.tv_no_ongoing_trip)?.visibility = VISIBLE
+            ongoingView?.findViewById<View>(R.id.nestedView)?.visibility = INVISIBLE
+        } else {
+            ongoingView?.findViewById<TextView>(R.id.tv_no_ongoing_trip)?.visibility = INVISIBLE
+            ongoingView?.findViewById<View>(R.id.nestedView)?.visibility = VISIBLE
+            ongoingView?.trip_destination2?.text = "Trip to ${ongoingTrip.destination}"
+            ongoingView?.trip_period2?.text = "${formatDate(ongoingTrip.from)} - ${formatDate(ongoingTrip.to)}"
+            val today = LocalDate.now()
+            if (ongoingTrip.from.isAfter(today))
+                ongoingView?.trip_until2?.text = "Coming up in ${ChronoUnit.DAYS.between(today, ongoingTrip.from)} days..."
+            else if (today.isAfter(ongoingTrip.to))
+                ongoingView?.trip_until2?.text = "Ended ${ChronoUnit.DAYS.between(ongoingTrip.to, today)} days ago..."
+            else
+                ongoingView?.trip_until2?.text = "Ongoing..."
+
+            val dailyEvents: HashMap<LocalDate, ArrayList<Event>> = HashMap()
+            ongoingTrip.events.forEach {
+                dailyEvents.putIfAbsent(it.date!!, ArrayList())
+                dailyEvents[it.date!!]?.add(it)
+            }
+
+            tripDaysViewManager = LinearLayoutManager(this@MainActivity)
+            nestedView.rv_trip_days.apply {
+                adapter = TripDayRecyclerViewAdapter(dailyEvents.toSortedMap().values.toMutableList())
+                layoutManager = tripDaysViewManager
+            }
+        }
+    }
+
+    private fun formatDate(date: LocalDate) : String {
+        return date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+    }
+
+    class OngoingUpdater: AsyncTask<Any, Void?, Void>() {
+        var onPost: ((List<Trip>) -> Unit)? = null
+        var trips: List<Trip>? = null
+
+        override fun doInBackground(vararg params: Any?): Void? {
+            onPost = params[1] as (List<Trip>) -> Unit
+            runBlocking {
+                trips = (params[0] as TripRepository).getAllTrips()
+            }
+            return null
+        }
+
+        override fun onPostExecute(result: Void?) {
+            onPost?.invoke(trips!!)
+        }
+
     }
 }
