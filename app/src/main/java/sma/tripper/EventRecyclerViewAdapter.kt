@@ -1,14 +1,11 @@
 package sma.tripper
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.os.AsyncTask
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.event.view.*
-import java.net.URL
+import sma.tripper.data.Event
 
 class EventRecyclerViewAdapter(
     val events: MutableList<Event>,

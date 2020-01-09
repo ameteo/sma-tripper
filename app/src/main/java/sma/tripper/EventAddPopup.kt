@@ -7,6 +7,8 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
 import android.widget.TimePicker
+import sma.tripper.data.Event
+import sma.tripper.data.Trip
 
 class EventAddPopup(
     private val context: Context,

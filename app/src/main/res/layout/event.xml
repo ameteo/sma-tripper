@@ -47,7 +47,7 @@
                 app:layout_constraintEnd_toStartOf="@+id/event_add"
                 app:layout_constraintStart_toEndOf="@+id/event_thumbnail"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.506" />
+                app:layout_constraintVertical_bias="0.50" />
 
             <Button
                 android:id="@+id/event_add"

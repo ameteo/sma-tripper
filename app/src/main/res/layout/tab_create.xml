@@ -147,7 +147,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="16dp"
-        android:text="Add events to your trip? You can also do this later."
+        android:text="Click on done to save your trip after you finish adding events."
         android:textAlignment="center"
         android:textSize="16dp"
         android:visibility="invisible"

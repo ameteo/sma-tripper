@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
@@ -24,12 +25,18 @@ import com.google.android.material.tabs.TabLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.tab_create.*
 import org.json.JSONObject
+import sma.tripper.data.Event
+import sma.tripper.data.Trip
+import sma.tripper.room.AppDatabaseProvider
+import sma.tripper.room.RoomTripRepository
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import androidx.lifecycle.Observer
+import kotlinx.android.synthetic.main.tab_trips.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var apiKey: String
@@ -47,11 +54,17 @@ class MainActivity : AppCompatActivity() {
     private var createView: View? = null
     private var recommendedView: View? = null
     private var tripsView: View? = null
+    private var tripRepository: TripRepository? = null
     private var trip: Trip? = null
+    private val tripsLiveData = MutableLiveData<List<Trip>>()
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var viewAdapter: EventRecyclerViewAdapter
-    private lateinit var viewManager: RecyclerView.LayoutManager
+    private lateinit var createRecyclerView: RecyclerView
+    private lateinit var createViewAdapter: EventRecyclerViewAdapter
+    private lateinit var createViewManager: RecyclerView.LayoutManager
+
+    private lateinit var tripsRecyclerView: RecyclerView
+    private lateinit var tripsViewAdapter: TripRecyclerViewAdapter
+    private lateinit var tripsViewManager: RecyclerView.LayoutManager
 
     private var autocompleteResults: HashMap<String, String> = HashMap()
 
@@ -76,13 +89,29 @@ class MainActivity : AppCompatActivity() {
         nestedScrollView.addView(ongoingView)
         btn_login.setOnClickListener { login() }
         btn_logout.setOnClickListener { logout() }
+
+        tripsLiveData.observe(this, Observer { trips ->
+            tripsViewAdapter = TripRecyclerViewAdapter(
+                trips.toMutableList(),
+                { trip -> },
+                { trip -> tripRepository?.removeTrip(trip); tripsLiveData.postValue(tripRepository?.getAllTrips()) }
+            )
+            tripsViewManager = LinearLayoutManager(this@MainActivity)
+            rv_trips.apply {
+                adapter = tripsViewAdapter
+                layoutManager = tripsViewManager
+            }
+        })
         tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val newView = when(tab?.text) {
                     getString(R.string.tab_title_ongoing) -> ongoingView
                     getString(R.string.tab_title_create) -> createView
                     getString(R.string.tab_title_recommended) -> recommendedView
-                    getString(R.string.tab_title_trips) -> tripsView
+                    getString(R.string.tab_title_trips) -> {
+                        tripsLiveData.postValue(tripRepository?.getAllTrips())
+                        tripsView
+                    }
                     else -> return
                 }
                 nestedScrollView.removeAllViews()
@@ -92,9 +121,7 @@ class MainActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) { }
         })
 
-
         val destination = createView?.findViewById<AutoCompleteTextView>(R.id.autocomplete_create_destination)
-
 
         destination?.addTextChangedListener {
             if (it!!.length >= 3) {
@@ -148,13 +175,23 @@ class MainActivity : AppCompatActivity() {
                 lbl_created.visibility = View.VISIBLE
                 btn_create_done.visibility = Button.VISIBLE
 
-                trip = Trip(fromDate!!, toDate!!, destination?.text.toString())
+                trip = Trip(
+                    System.currentTimeMillis(),
+                    fromDate!!,
+                    toDate!!,
+                    destination?.text.toString()
+                )
                 lbl_created.text = "${trip!!.tripDays.size} day trip to ${destination?.text} created!"
                 btn_create_done.setOnClickListener { handleTripDone() }
                 from?.isEnabled = false
                 to?.isEnabled = false
                 destination?.isEnabled = false
-                trip = Trip(fromDate!!, toDate!!, destination?.text.toString())
+                trip = Trip(
+                    System.currentTimeMillis(),
+                    fromDate!!,
+                    toDate!!,
+                    destination?.text.toString()
+                )
                 getDestinationLocationAndInitList()
             } else
                 Toast.makeText(applicationContext, "Invalid value for ${invalidFields.joinToString()}", Toast.LENGTH_SHORT).show()
@@ -172,8 +209,8 @@ class MainActivity : AppCompatActivity() {
         input_create_to.text.clear()
         autocomplete_create_destination.isEnabled = true
         autocomplete_create_destination.text.clear()
-        viewAdapter.events.clear()
-        viewAdapter.notifyDataSetChanged()
+        createViewAdapter.events.clear()
+        createViewAdapter.notifyDataSetChanged()
         saveTrip(trip!!)
         Toast.makeText(
             applicationContext,
@@ -193,7 +230,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveTrip(trip: Trip) {
-
+        tripRepository?.addTrip(trip)
     }
 
     private fun localDateToDate(localDate: LocalDate) : Date {
@@ -280,13 +317,13 @@ class MainActivity : AppCompatActivity() {
                         photoUrl = urlPlacesPhoto.format(photoReference, apiKey)
                     }
                 }
-                events.add(Event(name, address, photoUrl))
+                events.add(Event(System.currentTimeMillis(), name, address, photoUrl))
             }
-            viewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event -> onEventAddButtonClicked(event) }
-            viewManager = LinearLayoutManager(this@MainActivity)
-            recyclerView = rv_events.apply {
-                adapter = viewAdapter
-                layoutManager = viewManager
+            createViewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event -> onEventAddButtonClicked(event) }
+            createViewManager = LinearLayoutManager(this@MainActivity)
+            createRecyclerView = rv_events.apply {
+                adapter = createViewAdapter
+                layoutManager = createViewManager
             }
         }
     }
@@ -327,10 +364,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI() {
         if (account == null) {
+            tripRepository = RoomTripRepository(AppDatabaseProvider.getDb(this@MainActivity))
             btn_login.visibility = Button.VISIBLE
             btn_logout.visibility = Button.INVISIBLE
             lbl_user.text = "Guest"
         } else {
+            tripRepository = RoomTripRepository(AppDatabaseProvider.getDb(this@MainActivity))
             btn_login.visibility = Button.INVISIBLE
             btn_logout.visibility = Button.VISIBLE
             lbl_user.text = account?.displayName

@@ -1,9 +1,11 @@
-package sma.tripper
+package sma.tripper.data
 
+import sma.tripper.data.Event
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 
-data class Trip(val from : LocalDate, val to : LocalDate, val destination : String) {
+data class Trip(val tripId: Long, val from : LocalDate, val to : LocalDate, val destination : String) {
     val tripDays : HashMap<String, LocalDate> = initializeTripDays()
 
     private fun initializeTripDays(): HashMap<String, LocalDate> {
@@ -16,7 +18,7 @@ data class Trip(val from : LocalDate, val to : LocalDate, val destination : Stri
         return tripDays
     }
 
-    val events : ArrayList<Event> = ArrayList()
+    var events : MutableList<Event> = ArrayList()
 
     fun addEvent(event: Event) {
         events.add(event)

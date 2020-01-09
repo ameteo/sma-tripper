@@ -1,8 +1,9 @@
-package sma.tripper
+package sma.tripper.data
 
 import java.time.LocalDate
 
 data class Event @JvmOverloads constructor(
+    val eventId: Long,
     val name: String,
     val address: String,
     val thumbnailUrl: String? = null,
