@@ -10,7 +10,7 @@ import sma.tripper.entity.EventEntity
 import sma.tripper.entity.TripEntity
 import sma.tripper.entity.TripWithEventsEntity
 
-@Database(entities = [TripEntity::class, EventEntity::class], version = 1)
+@Database(entities = [TripEntity::class, EventEntity::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao

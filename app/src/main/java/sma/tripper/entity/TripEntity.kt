@@ -10,5 +10,7 @@ data class TripEntity (
     @PrimaryKey val tripId: Long,
     val from: LocalDate,
     val to: LocalDate,
-    val destination: String
+    val destination: String,
+    val lat: String?,
+    val lng: String?
 )

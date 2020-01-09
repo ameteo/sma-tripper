@@ -37,6 +37,9 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.tab_trips.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import sma.tripper.firebase.FirebaseTripRepository
 
 class MainActivity : AppCompatActivity() {
     private lateinit var apiKey: String
@@ -68,6 +71,9 @@ class MainActivity : AppCompatActivity() {
 
     private var autocompleteResults: HashMap<String, String> = HashMap()
 
+    fun updateOngoing(trips: List<Trip>) {
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -93,8 +99,13 @@ class MainActivity : AppCompatActivity() {
         tripsLiveData.observe(this, Observer { trips ->
             tripsViewAdapter = TripRecyclerViewAdapter(
                 trips.toMutableList(),
-                { trip -> },
-                { trip -> tripRepository?.removeTrip(trip); tripsLiveData.postValue(tripRepository?.getAllTrips()) }
+                { trip -> TripDetailsPopup(this@MainActivity, trip).show() },
+                { trip ->
+                    GlobalScope.launch {
+                        tripRepository?.removeTrip(trip)
+                        tripsLiveData.postValue(tripRepository?.getAllTrips())
+                    }
+                }
             )
             tripsViewManager = LinearLayoutManager(this@MainActivity)
             rv_trips.apply {
@@ -102,14 +113,18 @@ class MainActivity : AppCompatActivity() {
                 layoutManager = tripsViewManager
             }
         })
+
         tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val newView = when(tab?.text) {
-                    getString(R.string.tab_title_ongoing) -> ongoingView
+                    getString(R.string.tab_title_ongoing) -> {
+                        GlobalScope.launch { updateOngoing(tripRepository!!.getAllTrips()) }
+                        ongoingView
+                    }
                     getString(R.string.tab_title_create) -> createView
                     getString(R.string.tab_title_recommended) -> recommendedView
                     getString(R.string.tab_title_trips) -> {
-                        tripsLiveData.postValue(tripRepository?.getAllTrips())
+                        GlobalScope.launch { tripsLiveData.postValue(tripRepository?.getAllTrips()) }
                         tripsView
                     }
                     else -> return
@@ -137,7 +152,6 @@ class MainActivity : AppCompatActivity() {
         }
         val datePickerFrom = DatePickerDialog(this@MainActivity)
         val datePickerTo = DatePickerDialog(this@MainActivity)
-        setColors(createView!!)
 
         val from = createView?.findViewById<EditText>(R.id.input_create_from)
         var fromDate: LocalDate? = null
@@ -214,23 +228,15 @@ class MainActivity : AppCompatActivity() {
         saveTrip(trip!!)
         Toast.makeText(
             applicationContext,
-            "Find your trip in the 'MY TRIPS' tab!",
+            "Find your trip in the MY TRIPS tab!",
             Toast.LENGTH_SHORT
         ).show()
     }
 
-    private fun setColors(view: View) {
-//        view.findViewById<TextView>(R.id.lbl_create_from)?.setTextColor(resources.getColor(R.color.blacky))
-//        view.findViewById<TextView>(R.id.lbl_create_to)?.setTextColor(resources.getColor(R.color.blacky))
-//        view.findViewById<TextView>(R.id.lbl_create_destination)?.setTextColor(resources.getColor(R.color.blacky))
-//        view.findViewById<EditText>(R.id.input_create_from)?.setTextColor(resources.getColor(R.color.blacky))
-//        view.findViewById<EditText>(R.id.input_create_to)?.setTextColor(resources.getColor(R.color.blacky))
-//        view.findViewById<AutoCompleteTextView>(R.id.autocomplete_create_destination)?.setTextColor(resources.getColor(R.color.blacky))
-//        view.findViewById<Button>(R.id.btn_create_next)?.setTextColor(resources.getColor(R.color.blacky))
-    }
-
     private fun saveTrip(trip: Trip) {
-        tripRepository?.addTrip(trip)
+        GlobalScope.launch {
+            tripRepository?.addTrip(trip)
+        }
     }
 
     private fun localDateToDate(localDate: LocalDate) : Date {
@@ -268,6 +274,8 @@ class MainActivity : AppCompatActivity() {
             val location = json.getJSONObject("result").getJSONObject("geometry").getJSONObject("location")
             val lat = location.getString("lat")
             val lng = location.getString("lng")
+            trip?.lat = lat
+            trip?.lng = lng
             findPlacesNearby(lat, lng)
         }
     }
@@ -348,6 +356,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(applicationContext, e.message, Toast.LENGTH_SHORT).show()
         }
         updateUI()
+        GlobalScope.launch { tripsLiveData.postValue(tripRepository?.getAllTrips()) }
     }
 
     private fun login() {
@@ -359,17 +368,18 @@ class MainActivity : AppCompatActivity() {
             account = null
             avatar.setImageResource(R.drawable.avatar)
             updateUI()
+            GlobalScope.launch { tripsLiveData.postValue(tripRepository?.getAllTrips()) }
         }
+
     }
 
     private fun updateUI() {
         if (account == null) {
-            tripRepository = RoomTripRepository(AppDatabaseProvider.getDb(this@MainActivity))
             btn_login.visibility = Button.VISIBLE
             btn_logout.visibility = Button.INVISIBLE
             lbl_user.text = "Guest"
-        } else {
             tripRepository = RoomTripRepository(AppDatabaseProvider.getDb(this@MainActivity))
+        } else {
             btn_login.visibility = Button.INVISIBLE
             btn_logout.visibility = Button.VISIBLE
             lbl_user.text = account?.displayName
@@ -384,6 +394,8 @@ class MainActivity : AppCompatActivity() {
             }
             else
                 avatar.setImageResource(R.drawable.avatar)
+
+            tripRepository = FirebaseTripRepository(account?.id!!)
         }
     }
 

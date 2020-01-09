@@ -5,8 +5,10 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
-data class Trip(val tripId: Long, val from : LocalDate, val to : LocalDate, val destination : String) {
+data class Trip(val tripId: Long, val from: LocalDate, val to: LocalDate, val destination: String) {
     val tripDays : HashMap<String, LocalDate> = initializeTripDays()
+    var lat: String? = null
+    var lng: String? = null
 
     private fun initializeTripDays(): HashMap<String, LocalDate> {
         val tripDays : HashMap<String, LocalDate> = HashMap()

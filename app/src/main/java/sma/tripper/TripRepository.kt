@@ -3,7 +3,7 @@ package sma.tripper
 import sma.tripper.data.Trip
 
 interface TripRepository {
-    fun getAllTrips() : List<Trip>
-    fun addTrip(trip: Trip)
-    fun removeTrip(trip: Trip)
+    suspend fun getAllTrips() : List<Trip>
+    suspend fun addTrip(trip: Trip)
+    suspend fun removeTrip(trip: Trip)
 }
