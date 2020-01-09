@@ -3,10 +3,7 @@ package sma.tripper
 import android.app.AlertDialog
 import android.content.Context
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.Spinner
-import android.widget.TimePicker
+import android.widget.*
 import sma.tripper.data.Event
 import sma.tripper.data.Trip
 
@@ -37,8 +34,8 @@ class EventAddPopup(
             event.hour = timePicker.hour
             event.minute = timePicker.minute
             trip.addEvent(event)
-//            removeEventFromList()
             alertDialog.dismiss()
+            Toast.makeText(context, "Event added to your trip!", Toast.LENGTH_SHORT).show()
         }
         dialogView.findViewById<Button>(R.id.btn_date_time_picker_cancel)
             .setOnClickListener {
