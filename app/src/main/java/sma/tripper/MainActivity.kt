@@ -36,6 +36,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import androidx.lifecycle.Observer
+import kotlinx.android.synthetic.main.tab_recommended.*
 import kotlinx.android.synthetic.main.tab_trips.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -58,12 +59,15 @@ class MainActivity : AppCompatActivity() {
     private var recommendedView: View? = null
     private var tripsView: View? = null
     private var tripRepository: TripRepository? = null
-    private var trip: Trip? = null
     private val tripsLiveData = MutableLiveData<List<Trip>>()
 
     private lateinit var createRecyclerView: RecyclerView
     private lateinit var createViewAdapter: EventRecyclerViewAdapter
     private lateinit var createViewManager: RecyclerView.LayoutManager
+
+    private lateinit var recommendedCreateRecyclerView: RecyclerView
+    private lateinit var recommendedCreateViewAdapter: EventRecyclerViewAdapter
+    private lateinit var recommendedCreateViewManager: RecyclerView.LayoutManager
 
     private lateinit var tripsRecyclerView: RecyclerView
     private lateinit var tripsViewAdapter: TripRecyclerViewAdapter
@@ -122,7 +126,10 @@ class MainActivity : AppCompatActivity() {
                         ongoingView
                     }
                     getString(R.string.tab_title_create) -> createView
-                    getString(R.string.tab_title_recommended) -> recommendedView
+                    getString(R.string.tab_title_recommended) -> {
+                        GlobalScope.launch { findRecommended(tripRepository!!.getAllTrips()) }
+                        recommendedView
+                    }
                     getString(R.string.tab_title_trips) -> {
                         GlobalScope.launch { tripsLiveData.postValue(tripRepository?.getAllTrips()) }
                         tripsView
@@ -188,31 +195,34 @@ class MainActivity : AppCompatActivity() {
                 lbl_select_poi.visibility = View.VISIBLE
                 lbl_created.visibility = View.VISIBLE
                 btn_create_done.visibility = Button.VISIBLE
-
-                trip = Trip(
+                val trip = Trip(
                     System.currentTimeMillis(),
                     fromDate!!,
                     toDate!!,
                     destination?.text.toString()
                 )
                 lbl_created.text = "${trip!!.tripDays.size} day trip to ${destination?.text} created!"
-                btn_create_done.setOnClickListener { handleTripDone() }
+                btn_create_done.setOnClickListener { handleTripDone(trip) }
                 from?.isEnabled = false
                 to?.isEnabled = false
                 destination?.isEnabled = false
-                trip = Trip(
-                    System.currentTimeMillis(),
-                    fromDate!!,
-                    toDate!!,
-                    destination?.text.toString()
-                )
-                getDestinationLocationAndInitList()
+
+                getDestinationLocationAndInitList(trip)
             } else
                 Toast.makeText(applicationContext, "Invalid value for ${invalidFields.joinToString()}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun handleTripDone() {
+    private fun findRecommended(trips: List<Trip>) {
+        trips.filter{t -> tripIsOngoingOrUpcoming(t) }.forEach{t -> findPlacesNearby(t.lat!!, t.lng!!, t, true)}
+    }
+
+    private fun tripIsOngoingOrUpcoming(t: Trip) : Boolean {
+        val today = LocalDate.now()
+        return today.isBefore(t.from) || (t.from.minusDays(1).isBefore(today) && t.to.plusDays(1).isAfter(today))
+    }
+
+    private fun handleTripDone(trip: Trip) {
         lbl_select_poi.visibility = View.INVISIBLE
         lbl_created.visibility = View.INVISIBLE
         btn_create_done.visibility = View.INVISIBLE
@@ -243,31 +253,31 @@ class MainActivity : AppCompatActivity() {
         return Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
     }
 
-    private fun getDestinationLocationAndInitList() {
+    private fun getDestinationLocationAndInitList(trip: Trip) {
         val destination = autocomplete_create_destination.text.toString()
         val destinationPlaceId = autocompleteResults[destination]
         val placeLocationRequest = JsonObjectRequest(
             Request.Method.GET,
             urlPlacesDetails.format(destinationPlaceId, apiKey),
             null,
-            Response.Listener { json -> handleSuccessfulPlacesDetailsResponse(json) },
+            Response.Listener { json -> handleSuccessfulPlacesDetailsResponse(json, trip) },
             Response.ErrorListener { print("no") }
         )
         queue?.add(placeLocationRequest)
     }
 
-    private fun findPlacesNearby(lat: String, lng: String) {
+    private fun findPlacesNearby(lat: String, lng: String, trip: Trip, isRecommended: Boolean) {
         val nearbySearchRequest = JsonObjectRequest(
             Request.Method.GET,
             urlPlacesNearby.format(lat, lng, apiKey),
             null,
-            Response.Listener { json -> handleSuccessfulPlacesNearbyResponse(json) },
+            Response.Listener { json -> handleSuccessfulPlacesNearbyResponse(json, trip, isRecommended) },
             Response.ErrorListener { print("no") }
         )
         queue?.add(nearbySearchRequest)
     }
 
-    private fun handleSuccessfulPlacesDetailsResponse(json: JSONObject) {
+    private fun handleSuccessfulPlacesDetailsResponse(json: JSONObject, trip: Trip) {
         if ((json.getString("status") == "OK").not()) {
             Toast.makeText(applicationContext, json.getString("error_message"), Toast.LENGTH_SHORT).show()
         } else {
@@ -276,7 +286,7 @@ class MainActivity : AppCompatActivity() {
             val lng = location.getString("lng")
             trip?.lat = lat
             trip?.lng = lng
-            findPlacesNearby(lat, lng)
+            findPlacesNearby(lat, lng, trip, false)
         }
     }
 
@@ -303,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleSuccessfulPlacesNearbyResponse(json: JSONObject) {
+    private fun handleSuccessfulPlacesNearbyResponse(json: JSONObject, trip: Trip, isRecommended: Boolean) {
         if ((json.getString("status") == "OK").not()) {
             val message =
                 if (json.has("error_message")) json.getString("error_message") else "Please try a different location"
@@ -327,16 +337,39 @@ class MainActivity : AppCompatActivity() {
                 }
                 events.add(Event(System.currentTimeMillis(), name, address, photoUrl))
             }
-            createViewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event -> onEventAddButtonClicked(event) }
+            addEventsToRecycleView(events, trip, isRecommended)
+        }
+    }
+
+    private fun addEventsToRecycleView(events: ArrayList<Event>, trip: Trip, isRecommended: Boolean) {
+        if(isRecommended.not()) {
+            createViewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event ->
+                onEventAddButtonClicked(
+                    event,
+                    trip
+                )
+            }
             createViewManager = LinearLayoutManager(this@MainActivity)
             createRecyclerView = rv_events.apply {
                 adapter = createViewAdapter
                 layoutManager = createViewManager
             }
+        } else {
+            recommendedCreateViewAdapter = EventRecyclerViewAdapter(events.toMutableList()) { event ->
+                onEventAddButtonClicked(
+                    event,
+                    trip
+                )
+            }
+            recommendedCreateViewManager = LinearLayoutManager(this@MainActivity)
+            recommendedCreateRecyclerView = rv_recommended_events.apply {
+                adapter = recommendedCreateViewAdapter
+                layoutManager = recommendedCreateViewManager
+            }
         }
     }
 
-    private fun onEventAddButtonClicked(event: Event) {
+    private fun onEventAddButtonClicked(event: Event, trip: Trip) {
         EventAddPopup(this@MainActivity, trip!!, event).show()
     }
 
