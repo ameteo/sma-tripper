@@ -11,7 +11,7 @@ All credit goes to:
 ### 1. Introduction
   - **What ?**
     
-    The application is meant to be a lightweight companion on citybreaks. It will help you find intereseting spots to check out wherever you are (as long as google knows about it), organize the places that spark your intereset in an hourly schedule and mark places you've already seen.
+    The application is meant to be a lightweight companion on citybreaks. It will help you find interesting spots to check out wherever you are (as long as google knows about it), organize the places that spark your interest in an hourly schedule and mark places you've already seen.
 
   - **Why ?**
 
